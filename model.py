@@ -34,13 +34,8 @@ class Photo(db.Model):
         nullable=False
     )
 
-    latitude = db.Column(
-        db.String(20),
-        nullable=False
-    )
-
-    longitude = db.Column(
-        db.String(20),
+    location = db.Column(
+        db.String,
         nullable=False
     )
 

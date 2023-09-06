@@ -20,6 +20,9 @@ app.config['S3_SECRET'] = os.environ["AWS_ACCESS_SECRET"]
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
+    "DATABASE_URL", "postgresql:///photos")
+
 geolocator = Nominatim(user_agent="geoapiExercises")
 
 s3 = boto3.client(
@@ -28,6 +31,8 @@ s3 = boto3.client(
     aws_access_key_id=app.config['S3_KEY'],
     aws_secret_access_key=app.config['S3_SECRET']
 )
+
+connect_db(app)
 
 toolbar = DebugToolbarExtension(app)
 
