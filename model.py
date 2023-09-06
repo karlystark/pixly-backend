@@ -21,37 +21,30 @@ class Photo(db.Model):
 
     camera = db.Column(
         db.String(50),
-        nullable=False
     )
 
     width = db.Column(
         db.Integer,
-        nullable=False
     )
 
     height = db.Column(
         db.Integer,
-        nullable=False
     )
 
     location = db.Column(
         db.String,
-        nullable=False
     )
 
     aperture = db.Column(
         db.Float,
-        nullable=False
     )
 
     shutter_speed = db.Column(
         db.Float,
-        nullable=False
     )
 
     focal_length = db.Column(
         db.Float,
-        nullable=False
     )
 
 

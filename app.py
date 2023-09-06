@@ -59,42 +59,65 @@ def get_location(latitude, longitude):
 
 #Given an image filename, extract EXIF image data and create an object that holds desired values
 def get_image_metadata(image_filename):
+    print("Do we get here?")
     with open(image_filename, "rb") as image_file:
         image_data = Image(image_file)
 
     location = None
+    print("The image data", image_data)
+    print("Has exif?", image_data.has_exif)
+    print("What do we get", image_data.list_all())
 
-    if image_data.gps_latitude and image_data.gps_longitude:
-        latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
-        longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
-        location = get_location(latitude, longitude)
+    if image_data.has_exif:
 
-    select_data = {
-        "filename": image_filename,
-        "camera": ((f"{image_data.make} {image_data.model}") if (image_data.make and image_data.model) else None),
-        "width": (image_data.pixel_x_dimension if (image_data.pixel_x_dimension) else None),
-        "height": (image_data.pixel_y_dimension if image_data.pixel_y_dimension else None),
-        "location": location if location else None,
-        "aperture": image_data.aperture_value if image_data.aperture_value else None,
-        "shutter_speed": image_data.shutter_speed_value if image_data.shutter_speed_value else None,
-        "focal_length": image_data.focal_length if image_data.focal_length else None
-    }
+    # print("before creating select_data get make", image_data.get("make"))
+
+
+        if image_data.get("gps_latitude") and image_data.get("gps_longitude"):
+            latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
+            longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
+            location = get_location(latitude, longitude)
+
+        print("before creating select_data get make", image_data.get("make"))
+        select_data = {
+            "filename": image_filename,
+            "camera": ((f"{image_data.make} {image_data.model}") if (image_data.get("make") and image_data.get("model")) else None),
+            "width": (image_data.pixel_x_dimension if (image_data.get("pixel_x_dimension")) else None),
+            "height": (image_data.pixel_y_dimension if image_data.get("pixel_y_dimension") else None),
+            "location": location if location else None,
+            "aperture": image_data.aperture_value if image_data.get("aperture_value") else None,
+            "shutter_speed": image_data.shutter_speed_value if image_data.get("shutter_speed_value") else None,
+            "focal_length": image_data.focal_length if image_data.get("focal_length") else None
+        }
+    else:
+        select_data = {"filename": image_filename,
+                       "camera": None,
+                       "width": None,
+                       "height": None,
+                       "location": None,
+                       "aperture": None,
+                       "shutter_speed": None,
+                       "focal_length": None
+                       }
+
+    print("select_data=", select_data)
+    print("type of select data", type(select_data))
 
     return select_data
 
-    print("select_data=", select_data)
+
 
 #Add an image data object the the database
 def add_to_db(data):
+    print ("what's our filename?", data["filename"])
     image = Photo(
-        filename=data.filename,
-        camera=data.camera,
-        width=data.width,
-        height=data.height,
-        latitude=data.latitude,
-        longitude=data.longitude,
-        shutter_speed=data.shutter_speed,
-        focal_length=data.focal_length
+        filename=data["filename"],
+        camera=data["camera"],
+        width=data["width"],
+        height=data["height"],
+        location=data["location"],
+        shutter_speed=data["shutter_speed"],
+        focal_length=data["focal_length"]
     )
 
     db.session.add(image)
