@@ -6,7 +6,8 @@ from flask_debugtoolbar import DebugToolbarExtension
 from dotenv import load_dotenv
 import boto3
 import uuid
-from exif import Image
+from exif import Image as Exif
+from PIL import Image, ExifTags
 from geopy.geocoders import Nominatim
 from model import connect_db, db, Photo
 
@@ -48,56 +49,69 @@ def make_unique_filename():
     return new_filename
 
 #Given latitude and longitude values, return a string that contains the location's city and country
-def get_location(latitude, longitude):
-    location = geolocator.reverse(latitude+","+longitude)
-    location_data = location.raw['address']
+def get_location(image_filename):
+    with open(image_filename, "rb") as image_file:
+        image_data = Exif(image_file)
 
-    city = location_data.get('city', '')
-    country = location_data.get('country', '')
+    if image_data.get("gps_latitude") and image_data.get("gps_longitude"):
 
-    return f"{city}, {country}"
+        #TODO: calculate latitude and longitude values from tuples
+        print("LATITUDE VALUE=", image_data.gps_latitude, type(image_data.gps_latitude))
+        print("LONGITUDE VALUE=", image_data.gps_longitude, type(image_data.gps_longitude))
+        print("LONGITUDE REF=", image_data.gps_longitude_ref)
+        print("LATITUDE REF=", image_data.gps_latitude_ref)
+
+        latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
+        longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
+
+        location = geolocator.reverse(latitude+","+longitude)
+        location_data = location.raw['address']
+
+        city = location_data.get('city', '')
+        country = location_data.get('country', '')
+
+        return f"{city}, {country}"
+    else:
+        return None
 
 #Given an image filename, extract EXIF image data and create an object that holds desired values
 def get_image_metadata(image_filename):
-    print("Do we get here?")
-    with open(image_filename, "rb") as image_file:
-        image_data = Image(image_file)
+    image_file = Image.open(image_filename)
+    image_data = image_file.getexif()
 
-    location = None
-    print("The image data", image_data)
-    print("Has exif?", image_data.has_exif)
-    print("What do we get", image_data.list_all())
+    if image_data:
+        for key, val in image_data.items():
+            if key in ExifTags.TAGS:
+                print(f'{ExifTags.TAGS[key]}: {val}')
 
-    if image_data.has_exif:
+        width = image_file.width
+        height = image_file.height
+        make = ExifTags.Base.Make.value
+        model = ExifTags.Base.Model.value
+        location = get_location(image_filename)
 
-    # print("before creating select_data get make", image_data.get("make"))
+#271 => Make
+#272 => Model
+#34853 => lat & long => gpsinfo = info.get_ifd(34853)
+#Image.width ==> image width, in pixels
+#Image.height ==> image height, in pixels
 
 
-        if image_data.get("gps_latitude") and image_data.get("gps_longitude"):
-            latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
-            longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
-            location = get_location(latitude, longitude)
 
         print("before creating select_data get make", image_data.get("make"))
         select_data = {
             "filename": image_filename,
-            "camera": ((f"{image_data.make} {image_data.model}") if (image_data.get("make") and image_data.get("model")) else None),
-            "width": (image_data.pixel_x_dimension if (image_data.get("pixel_x_dimension")) else None),
-            "height": (image_data.pixel_y_dimension if image_data.get("pixel_y_dimension") else None),
-            "location": location if location else None,
-            "aperture": image_data.aperture_value if image_data.get("aperture_value") else None,
-            "shutter_speed": image_data.shutter_speed_value if image_data.get("shutter_speed_value") else None,
-            "focal_length": image_data.focal_length if image_data.get("focal_length") else None
+            "camera": f"{make} {model}" if (make and model) else None,
+            "width": width if width else None,
+            "height": height if height else None,
+            "location": location if location else None
         }
     else:
         select_data = {"filename": image_filename,
                        "camera": None,
                        "width": None,
                        "height": None,
-                       "location": None,
-                       "aperture": None,
-                       "shutter_speed": None,
-                       "focal_length": None
+                       "location": None
                        }
 
     print("select_data=", select_data)
@@ -115,9 +129,7 @@ def add_to_db(data):
         camera=data["camera"],
         width=data["width"],
         height=data["height"],
-        location=data["location"],
-        shutter_speed=data["shutter_speed"],
-        focal_length=data["focal_length"]
+        location=data["location"]
     )
 
     db.session.add(image)
