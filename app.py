@@ -37,12 +37,12 @@ toolbar = DebugToolbarExtension(app)
 def get_images():
     return render_template("form.html")
 
-
+# Make a universally unique jpg filename
 def make_unique_filename():
     new_filename = uuid.uuid4().hex + ".jpg"
     return new_filename
 
-
+#Given latitude and longitude values, return a string that contains the location's city and country
 def get_location(latitude, longitude):
     location = geolocator.reverse(latitude+","+longitude)
     location_data = location.raw['address']
@@ -52,7 +52,7 @@ def get_location(latitude, longitude):
 
     return f"{city}, {country}"
 
-
+#Given an image filename, extract EXIF image data and create an object that holds desired values
 def get_image_metadata(image_filename):
     with open(image_filename, "rb") as image_file:
         image_data = Image(image_file)
@@ -79,6 +79,7 @@ def get_image_metadata(image_filename):
 
     print("select_data=", select_data)
 
+#Add an image data object the the database
 def add_to_db(data):
     image = Photo(
         filename=data.filename,
@@ -94,8 +95,7 @@ def add_to_db(data):
     db.session.add(image)
     db.session.commit()
 
-
-
+#Upload an image file to AWS S3 bucket
 def send_file_to_s3(file, bucket):
     try:
         print("filename=", file.filename)
@@ -107,6 +107,10 @@ def send_file_to_s3(file, bucket):
     return "file successfully uploaded"
 
 
+#POST request sent to root route: pulls file object from request,
+#changes filename to universally unique name, sends file to S3,
+#grabs image metadata and uploads image data to database,
+#Returns success message or error message
 @app.post("/")
 def add_image():
     image = request.files["file"]
