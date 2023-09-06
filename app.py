@@ -48,6 +48,9 @@ def make_unique_filename():
     new_filename = uuid.uuid4().hex + ".jpg"
     return new_filename
 
+# def location_tuple_to_decimal(tuple):
+#     return tuple[0] + tuple[1] /
+
 #Given latitude and longitude values, return a string that contains the location's city and country
 def get_location(image_filename):
     with open(image_filename, "rb") as image_file:
@@ -58,11 +61,12 @@ def get_location(image_filename):
         #TODO: calculate latitude and longitude values from tuples
         print("LATITUDE VALUE=", image_data.gps_latitude, type(image_data.gps_latitude))
         print("LONGITUDE VALUE=", image_data.gps_longitude, type(image_data.gps_longitude))
+        print("type of tuples", type(image_data.gps_latitude[0]))
         print("LONGITUDE REF=", image_data.gps_longitude_ref)
         print("LATITUDE REF=", image_data.gps_latitude_ref)
 
-        latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
-        longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
+        # latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
+        # longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
 
         location = geolocator.reverse(latitude+","+longitude)
         location_data = location.raw['address']
