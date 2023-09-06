@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import boto3
 import uuid
 from exif import Image
+from geopy.geocoders import Nominatim
+from model import connect_db, db, Photo
 
 load_dotenv()
 
@@ -18,6 +20,8 @@ app.config['S3_SECRET'] = os.environ["AWS_ACCESS_SECRET"]
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
 app.config['SECRET_KEY'] = os.environ['SECRET_KEY']
 
+geolocator = Nominatim(user_agent="geoapiExercises")
+
 s3 = boto3.client(
     "s3",
     "us-west-1",
@@ -26,6 +30,8 @@ s3 = boto3.client(
 )
 
 toolbar = DebugToolbarExtension(app)
+
+
 
 @app.get("/")
 def get_images():
@@ -37,16 +43,56 @@ def make_unique_filename():
     return new_filename
 
 
-def get_metadata(image_filename):
+def get_location(latitude, longitude):
+    location = geolocator.reverse(latitude+","+longitude)
+    location_data = location.raw['address']
+
+    city = location_data.get('city', '')
+    country = location_data.get('country', '')
+
+    return f"{city}, {country}"
+
+
+def get_image_metadata(image_filename):
     with open(image_filename, "rb") as image_file:
         image_data = Image(image_file)
 
-        toPrint = image_data.list_all()
-        print ("Image data:", toPrint)
-        print("model", image_data.model)
-        print("make", image_data.make)
-        print("x_res", image_data.x_resolution)
-        print("pixel_x_dim", image_data.pixel_x_dimension)
+    location = None
+
+    if image_data.gps_latitude and image_data.gps_longitude:
+        latitude = image_data.gps_latitude if image_data.gps_latitude_ref == "N" else -abs(image_data.gps_latitude)
+        longitude = image_data.gps_longitude if image_data.gps_longitude_ref == "E" else -abs(image_data.gps_longitude)
+        location = get_location(latitude, longitude)
+
+    select_data = {
+        "filename": image_filename,
+        "camera": ((f"{image_data.make} {image_data.model}") if (image_data.make and image_data.model) else None),
+        "width": (image_data.pixel_x_dimension if (image_data.pixel_x_dimension) else None),
+        "height": (image_data.pixel_y_dimension if image_data.pixel_y_dimension else None),
+        "location": location if location else None,
+        "aperture": image_data.aperture_value if image_data.aperture_value else None,
+        "shutter_speed": image_data.shutter_speed_value if image_data.shutter_speed_value else None,
+        "focal_length": image_data.focal_length if image_data.focal_length else None
+    }
+
+    return select_data
+
+    print("select_data=", select_data)
+
+def add_to_db(data):
+    image = Photo(
+        filename=data.filename,
+        camera=data.camera,
+        width=data.width,
+        height=data.height,
+        latitude=data.latitude,
+        longitude=data.longitude,
+        shutter_speed=data.shutter_speed,
+        focal_length=data.focal_length
+    )
+
+    db.session.add(image)
+    db.session.commit()
 
 
 
@@ -60,6 +106,7 @@ def send_file_to_s3(file, bucket):
 
     return "file successfully uploaded"
 
+
 @app.post("/")
 def add_image():
     image = request.files["file"]
@@ -68,10 +115,11 @@ def add_image():
     if image.filename != "":
         image.filename = make_unique_filename()
         image.save(image.filename)
-        result = send_file_to_s3(image, app.config['S3_BUCKET'])
-        get_metadata(image.filename)
+        send_file_to_s3(image, app.config['S3_BUCKET'])
+
+        image_data = get_image_metadata(image.filename)
+        add_to_db(image_data)
         os.remove(image.filename)
-        return result
+        return image_data
     else:
         print("no image grabbed from file upload")
-
