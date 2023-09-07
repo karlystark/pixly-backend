@@ -4,6 +4,7 @@ from flask import Flask, render_template, request
 from flask_debugtoolbar import DebugToolbarExtension
 from dotenv import load_dotenv
 from model import connect_db, db, Photo
+from flask_cors import CORS
 
 load_dotenv()
 
@@ -11,6 +12,9 @@ from utilities import make_unique_filename, get_image_metadata, send_file_to_s3
 
 
 app = Flask(__name__)
+
+
+CORS(app)
 
 app.config['S3_BUCKET'] = os.environ["S3_BUCKET_NAME"]
 app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
@@ -24,7 +28,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
 toolbar = DebugToolbarExtension(app)
 
 connect_db(app)
-
 
 
 @app.get("/")
