@@ -35,16 +35,4 @@ class Photo(db.Model):
         db.String,
     )
 
-    aperture = db.Column(
-        db.Float,
-    )
-
-    shutter_speed = db.Column(
-        db.Float,
-    )
-
-    focal_length = db.Column(
-        db.Float,
-    )
-
 
