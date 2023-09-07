@@ -12,8 +12,6 @@ from utilities import make_unique_filename, get_image_metadata, send_file_to_s3
 
 
 app = Flask(__name__)
-
-
 CORS(app)
 
 app.config['S3_BUCKET'] = os.environ["S3_BUCKET_NAME"]
@@ -49,7 +47,7 @@ def add_image():
     """Grabs a file object of image.  Uses file object to upload image to aws.
     Gets metadata from file object. Saves metadata in database.
     Returns success message with metadata or error message."""
-    image = request.files["file"]
+    image = request.files["image"]
     print("image=", image)
 
     if image.filename != "":
