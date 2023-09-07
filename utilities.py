@@ -6,7 +6,6 @@ from exif import Image as Exif
 from PIL import Image
 from geopy.geocoders import Nominatim
 
-#import app
 
 load_dotenv()
 
@@ -28,7 +27,7 @@ def make_unique_filename():
 
 def location_tuple_to_decimal(tuple):
     """Given a tuple containing GPS location data in degrees, minutes, and
-    seconds, calculates the compressed value for use in location function"""
+    seconds, returns the compressed value. Ex. 24.9848."""
     return tuple[0] + tuple[1]/60 + tuple[2]/3600
 
 
@@ -36,23 +35,24 @@ def get_location(image_filename):
     """Given an image filename, grabs EXIF latitude and longitude values and
     processes them, returning a string that contains the location's city and
     country"""
-
     with open(image_filename, "rb") as image_file:
         image_data = Exif(image_file)
 
     if image_data.get("gps_latitude") and image_data.get("gps_longitude"):
 
-        # print("LATITUDE VALUE=", image_data.gps_latitude, type(image_data.gps_latitude))
-        # print("LONGITUDE VALUE=", image_data.gps_longitude, type(image_data.gps_longitude))
-        # print("type of tuples", type(image_data.gps_latitude[0]))
-        # print("LONGITUDE REF=", image_data.gps_longitude_ref)
-        # print("LATITUDE REF=", image_data.gps_latitude_ref)
+        latitude_decimal_form = (
+            location_tuple_to_decimal(image_data.gps_latitude))
+        longitude_decimal_form = (
+            location_tuple_to_decimal(image_data.gps_longitude))
 
-        latitude_decimal_form = location_tuple_to_decimal(image_data.gps_latitude)
-        longitude_decimal_form = location_tuple_to_decimal(image_data.gps_longitude)
-
-        latitude = latitude_decimal_form if image_data.gps_latitude_ref == "N" else -abs(latitude_decimal_form)
-        longitude = longitude_decimal_form if image_data.gps_longitude_ref == "E" else -abs(longitude_decimal_form)
+        latitude = (
+            latitude_decimal_form
+            if image_data.gps_latitude_ref == "N"
+            else -abs(latitude_decimal_form))
+        longitude = (
+            longitude_decimal_form
+            if image_data.gps_longitude_ref == "E"
+            else -abs(longitude_decimal_form))
 
         latitude_string = str(latitude)
         longitude_string = str(longitude)
@@ -69,8 +69,8 @@ def get_location(image_filename):
 
 
 def get_image_metadata(image_filename):
-    """Given an image filename, extracts EXIF image data and create an object
-    that holds desired values"""
+    """Take an image filename. Extract EXIF image data.  Create and return
+     an object that holds desired values"""
 
     image_file = Image.open(image_filename)
     image_data = image_file.getexif()
@@ -81,6 +81,7 @@ def get_image_metadata(image_filename):
         make = image_data.get(271)
         model = image_data.get(272)
         location = get_location(image_filename)
+        #TODO: comments to understand.  Global constants.
 
 
         print("before creating select_data get make", image_data.get("make"))
@@ -115,3 +116,6 @@ def send_file_to_s3(file, bucket):
         return f"Error occurred: {e}"
 
     return "file successfully uploaded"
+
+
+#TODO: Move select_data = {} section into Models static method.
