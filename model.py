@@ -35,4 +35,26 @@ class Photo(db.Model):
         db.String,
     )
 
+    @classmethod
+    def add_to_db(cls, data):
+        """Add an image data object to the database"""
+
+        image = Photo(
+            filename=data["filename"],
+            camera=data["camera"],
+            width=data["width"],
+            height=data["height"],
+            location=data["location"]
+        )
+
+        db.session.add(image)
+
+    def serialize(self):
+        return {
+            "filename": self.filename,
+            "camera": self.camera,
+            "width": self.width,
+            "height": self.height,
+            "location": self.location
+        }
 

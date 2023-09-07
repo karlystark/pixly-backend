@@ -1,6 +1,6 @@
 """Flask app for pixly app."""
 import os
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from flask_debugtoolbar import DebugToolbarExtension
 from dotenv import load_dotenv
 from model import connect_db, db, Photo
@@ -31,30 +31,24 @@ connect_db(app)
 
 
 @app.get("/")
-def get_images():
+def show_upload_form():
+    """Renders file upload form"""
     return render_template("form.html")
 
-#TODO: ADD TO MODELS
-def add_to_db(data):
-    """Add an image data object to the database"""
+@app.get("/photos")  #TODO: should be home later.
+def get_all_photos():
+    """Displays page with all photos"""
+    photos = Photo.query.all()
 
-    image = Photo(
-        filename=data["filename"],
-        camera=data["camera"],
-        width=data["width"],
-        height=data["height"],
-        location=data["location"]
-    )
+    serialized = [photo.serialize() for photo in photos]
+    return jsonify(photos=serialized)
 
-    db.session.add(image)
-    db.session.commit()
 
-#POST request sent to root route: pulls file object from request,
-#changes filename to universally unique name, sends file to S3,
-#grabs image metadata and uploads image data to database,
-#Returns success message or error message
 @app.post("/")
 def add_image():
+    """Grabs a file object of image.  Uses file object to upload image to aws.
+    Gets metadata from file object. Saves metadata in database.
+    Returns success message with metadata or error message."""
     image = request.files["file"]
     print("image=", image)
 
@@ -64,7 +58,9 @@ def add_image():
         send_file_to_s3(image, app.config['S3_BUCKET'])
 
         image_data = get_image_metadata(image.filename)
-        add_to_db(image_data)
+        print("image data:", image_data)
+        Photo.add_to_db(image_data)
+        db.session.commit()
         os.remove(image.filename)
         return image_data
     else:
