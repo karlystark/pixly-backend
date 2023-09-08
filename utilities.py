@@ -25,6 +25,7 @@ def make_unique_filename():
     new_filename = uuid.uuid4().hex + ".jpg"
     return new_filename
 
+
 def location_tuple_to_decimal(tuple):
     """Given a tuple containing GPS location data in degrees, minutes, and
     seconds, returns the compressed value. Ex. 24.9848."""
@@ -59,7 +60,6 @@ def get_location(image_filename):
 
         location = geolocator.reverse(latitude_string+","+longitude_string)
         location_data = location.raw['address']
-
         city = location_data.get('city', '')
         country = location_data.get('country', '')
 
@@ -81,8 +81,6 @@ def get_image_metadata(image_filename):
         make = image_data.get(271)
         model = image_data.get(272)
         location = get_location(image_filename)
-        #TODO: comments to understand.  Global constants.
-
 
         print("before creating select_data get make", image_data.get("make"))
         select_data = {
@@ -118,4 +116,13 @@ def send_file_to_s3(file, bucket):
     return "file successfully uploaded"
 
 
-#TODO: Move select_data = {} section into Models static method.
+
+
+
+
+
+
+
+
+# TODO: Move select_data = {} section into Models static method.
+# TODO: comments to understand.  Global constants.
