@@ -29,11 +29,6 @@ connect_db(app)
 
 
 @app.get("/")
-def show_upload_form():
-    """Renders file upload form"""
-    return render_template("form.html")
-
-@app.get("/photos")  #TODO: should be home later.
 def get_all_photos():
     """Displays page with all photos"""
 
@@ -53,7 +48,10 @@ def get_all_photos():
         photos = Photo.query.all()
 
     serialized = [photo.serialize() for photo in photos]
-    return jsonify(photos=serialized)
+
+    jsonified = jsonify(photos=serialized)
+    jsonified.headers.add("Access-Control-Allow-Origin", "*")
+    return jsonified
 
 
 @app.post("/")
