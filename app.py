@@ -36,7 +36,21 @@ def show_upload_form():
 @app.get("/photos")  #TODO: should be home later.
 def get_all_photos():
     """Displays page with all photos"""
-    photos = Photo.query.all()
+
+    print("Do we get in photos route")
+    camera = request.args.get("camera")
+    location = request.args.get("location")
+    print("camera is:", camera)
+
+    photos = []
+    if camera:
+        photos = Photo.camera.ilike(f"%{camera}%")
+
+    elif location:
+        photos = Photo.location.ilike(f"%{location}%")
+
+    else:
+        photos = Photo.query.all()
 
     serialized = [photo.serialize() for photo in photos]
     return jsonify(photos=serialized)
