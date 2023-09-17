@@ -82,7 +82,6 @@ def get_image_metadata(image_filename):
         model = image_data.get(272)
         location = get_location(image_filename)
 
-        print("before creating select_data get make", image_data.get("make"))
         select_data = {
             "filename": image_filename,
             "camera": f"{make} {model}" if (make and model) else None,
@@ -98,8 +97,6 @@ def get_image_metadata(image_filename):
                        "location": None
                        }
 
-    print("select_data=", select_data)
-    print("type of select data", type(select_data))
 
     return select_data
 
@@ -107,8 +104,6 @@ def get_image_metadata(image_filename):
 def send_file_to_s3(file, bucket):
     """Upload an image file to AWS S3 bucket"""
     try:
-        print("filename=", file.filename)
-
         s3.upload_file(file.filename, bucket, file.filename)
     except Exception as e:
         return f"Error occurred: {e}"

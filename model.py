@@ -35,8 +35,12 @@ class Photo(db.Model):
         db.String,
     )
 
+    alt = db.Column(
+        db.String,
+    )
+
     @classmethod
-    def add_to_db(cls, data):
+    def add_to_db(cls, data, alt):
         """Add an image data object to the database"""
 
         image = Photo(
@@ -44,7 +48,8 @@ class Photo(db.Model):
             camera=data["camera"],
             width=data["width"],
             height=data["height"],
-            location=data["location"]
+            location=data["location"],
+            alt=alt
         )
 
         db.session.add(image)
@@ -55,6 +60,7 @@ class Photo(db.Model):
             "camera": self.camera,
             "width": self.width,
             "height": self.height,
-            "location": self.location
+            "location": self.location,
+            "alt": self.alt
         }
 

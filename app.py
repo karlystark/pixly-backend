@@ -32,10 +32,9 @@ connect_db(app)
 def get_all_photos():
     """Displays page with all photos"""
 
-    print("Do we get in photos route")
     camera = request.args.get("camera")
     location = request.args.get("location")
-    print("camera is:", camera)
+
 
     photos = []
     if camera:
@@ -60,7 +59,8 @@ def add_image():
     Gets metadata from file object. Saves metadata in database.
     Returns success message with metadata or error message."""
     image = request.files["image"]
-    print("image=", image)
+    alt = request.form["alt_text"]
+    print("alt=", alt)
 
     if image.filename != "":
         image.filename = make_unique_filename()
@@ -68,8 +68,7 @@ def add_image():
         send_file_to_s3(image, app.config['S3_BUCKET'])
 
         image_data = get_image_metadata(image.filename)
-        print("image data:", image_data)
-        Photo.add_to_db(image_data)
+        Photo.add_to_db(image_data, alt)
         db.session.commit()
         os.remove(image.filename)
         return image_data
